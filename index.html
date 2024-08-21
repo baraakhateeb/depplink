@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Links (DeepLinking) Tester and Generator</title>
+    <meta name="description"
+          content="Test and generate Asset Links (DeepLinking) for Android apps. Validate your assetlinks.json file and ensure proper app-website association.">
+    <meta name="keywords"
+          content="Asset Links, DeepLinking, Android, App Links, assetlinks.json, Web Development, Mobile Development">
+    <meta name="author" content="Baraa Al Khateeb">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="Asset Links (DeepLinking) Tester and Generator">
+    <meta property="og:description"
+          content="Easily test and generate Asset Links for Android apps. Validate your assetlinks.json file and improve app-website association.">
+    <meta property="og:url" content="https://baraakhateeb.net/asset-links-tool">
+    <meta property="og:type" content="website">
+    <meta name="twitter:title" content="Asset Links (DeepLinking) Tester and Generator">
+    <meta name="twitter:description"
+          content="Test and generate Asset Links for Android apps. Validate your assetlinks.json file and ensure proper app-website association.">
+    <style>
+        :root {
+            --primary-color: #129fca;
+            --secondary-color: #4b4f51;
+            --success-color: #12ca93;
+            --error-color: #ca1212;
+            --background-color: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, .25);
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            background-color: var(--primary-color);
+            color: #fff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:not(:last-child) {
+            margin-right: 10px;
+        }
+
+        #result, #generatedJson {
+            margin-top: 30px;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: var(--success-color);
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: var(--error-color);
+        }
+
+        #generatedJson {
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+        }
+
+        footer {
+            bottom: 0;
+            text-align: center;
+            background-color: var(--secondary-color);
+            color: #e9ecef;
+        }
+
+        footer a {
+            color: #00e7a3;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Asset Links (DeepLinking) Tester and Generator</h1>
+    <form id="testForm">
+        <div class="form-group">
+            <label for="domain">Hosting site domain:</label>
+            <input type="text" id="domain" name="domain" required placeholder="e.g., example.com">
+        </div>
+        <div class="form-group">
+            <label for="package">App package name:</label>
+            <input type="text" id="package" name="package" required placeholder="e.g., com.example.app">
+        </div>
+        <div class="form-group">
+            <label for="sha">App package fingerprint (SHA256):</label>
+            <input type="text" id="sha" name="sha" required placeholder="e.g., AA:BB:CC:DD:...">
+        </div>
+        <div class="button-group">
+            <button type="submit" id="testButton">Test</button>
+            <button type="button" id="generateButton">Generate</button>
+        </div>
+    </form>
+    <div id="result"></div>
+    <div id="generatedJson"></div>
+</div>
+
+<footer>
+    Developed by <a href="https://baraakhateeb.net/" target="_blank">Baraa Al Khateeb</a>
+</footer>
+
+<script>
+    document.getElementById('testForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (validateForm()) {
+            testAssetLinks();
+        }
+    });
+
+    document.getElementById('generateButton').addEventListener('click', function () {
+        if (validateForm()) {
+            generateAssetLinks();
+        }
+    });
+
+    function validateForm() {
+        const domain = document.getElementById('domain').value.trim();
+        const package = document.getElementById('package').value.trim();
+        const sha = document.getElementById('sha').value.trim();
+
+        if (!domain || !package || !sha) {
+            showResult('Please fill in all fields.', false);
+            return false;
+        }
+
+        if (!/^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/.test(domain)) {
+            showResult('Invalid domain format.', false);
+            return false;
+        }
+
+        if (!/^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+[0-9a-z_]$/.test(package)) {
+            showResult('Invalid package name format.', false);
+            return false;
+        }
+
+        if (!/^[A-Fa-f0-9:]{95}$/.test(sha)) {
+            showResult('Invalid SHA256 fingerprint format.', false);
+            return false;
+        }
+
+        return true;
+    }
+
+    async function testAssetLinks() {
+        const domain = document.getElementById('domain').value.trim();
+        const package = document.getElementById('package').value.trim();
+        const sha = document.getElementById('sha').value.trim();
+
+        try {
+            const assetLinkJsonUrl = `https://${domain}/.well-known/assetlinks.json`;
+            const response = await fetch(assetLinkJsonUrl);
+
+            if (response.status === 200) {
+                const jsonData = await response.json();
+                if (jsonData) {
+                    const res = validateAssetLinks(jsonData, sha, domain, package);
+                    if (typeof res === 'string') {
+                        showResult(res, false);
+                    } else if (res) {
+                        showResult('Test Passed Successfully!', true);
+                    } else {
+                        showResult('Test failed.', false);
+                    }
+                } else {
+                    showResult('Invalid json format.', false);
+                }
+            } else {
+                showResult(`Test failed. Status code: ${response.status}`, false);
+            }
+        } catch (error) {
+            showResult(`Error: ${error.message}`, false);
+        }
+    }
+
+    function validateAssetLinks(assetLinkJson, sha, domain, package) {
+        const valid = assetLinkJson.some(link =>
+            link.target.namespace === 'android_app' &&
+            link.target.package_name === package &&
+            link.target.sha256_cert_fingerprints.includes(sha)
+        );
+
+        return valid ? true : 'Validation failed: Asset links do not match the provided information.';
+    }
+
+    function showResult(message, isSuccess) {
+        const resultDiv = document.getElementById('result');
+        resultDiv.textContent = message;
+        resultDiv.className = isSuccess ? 'success' : 'error';
+    }
+
+    function generateAssetLinks() {
+        const package = document.getElementById('package').value.trim();
+        const sha = document.getElementById('sha').value.trim();
+
+        const assetLinks = [
+            {
+                "relation": ["delegate_permission/common.handle_all_urls"],
+                "target": {
+                    "namespace": "android_app",
+                    "package_name": package,
+                    "sha256_cert_fingerprints": [sha]
+                }
+            }
+        ];
+
+        const generatedJsonDiv = document.getElementById('generatedJson');
+        generatedJsonDiv.textContent = JSON.stringify(assetLinks, null, 2);
+        showResult('Asset Links JSON generated successfully!', true);
+    }
+</script>
+</body>
+</html>
